@@ -31,29 +31,29 @@ aura_env.keyhandler:SetScript("OnClick", function (self, button, down)
             WA_Redfellas_Rot_HDH_Off_CDs = not WA_Redfellas_Rot_HDH_Off_CDs
             print("|cFF00FFFFRedfella's Rotation Offensive Helper: " .. ( WA_Redfellas_Rot_HDH_Off_CDs and "|cFF00FF00ENABLED|r" or "|cFFFF0000DISABLED|r" ) )
         end
-
+        
         WeakAurasSaved.displays[self.parent.id].hekiliEnabled = WA_Redfellas_Rot_HDH_Enabled
         WeakAurasSaved.displays[self.parent.id].hekiliCooldownsOff = WA_Redfellas_Rot_HDH_Off_CDs
         WeakAurasSaved.displays[self.parent.id].hekiliCooldownsDef = WA_Redfellas_Rot_HDH_Def_CDs
 end)
 
 function aura_env.setupBinds()
-
+    
     if InCombatLockdown() then return end
-
+    
     ClearOverrideBindings( aura_env.keyhandler )
     SetOverrideBindingClick( aura_env.keyhandler, true, aura_env.enabledToggle, aura_env.id.."_Keyhandler", "Enabled" )
     SetOverrideBindingClick( aura_env.keyhandler, true, aura_env.offCooldownsToggle, aura_env.id.."_Keyhandler", "offCooldowns" )
     SetOverrideBindingClick( aura_env.keyhandler, true, aura_env.defCooldownsToggle, aura_env.id.."_Keyhandler", "defCooldowns" )
-
+    
     print("|cFF00FFFFRedfella's Rotation Helper|r:  Keybinds are now active.")
     print("Enable/Disable - |cFFFFD100" .. aura_env.enabledToggle .. "|r.")
     print("Toggle Defensive Cooldowns - |cFFFFD100" .. aura_env.defCooldownsToggle .. "|r.")
     print("Toggle Offensive Cooldowns - |cFFFFD100" .. aura_env.offCooldownsToggle .. "|r.")
     print("You can *carefully* change these keybinds in the " .. aura_env.id .. " WeakAura on the Actions Tab, On Init, Expand Text Editor and see lines 11 to 13." )
-
+    
     aura_env.bindsInitialized = true
-
+    
 end
 
 aura_env.setupBinds()
@@ -71,29 +71,29 @@ aura_env.targetCount = 0
 
 aura_env.talents = {
     fel_mastery = { 1, 1, 1 },
-    chaos_cleave = { 1, 2, 1 },
+    felblade = { 1, 2, 1 },
     blind_fury = { 1, 3, 1 },
-
+    
     prepared = { 2, 1, 1 },
     demon_blades = { 2, 2, 1 },
     demonic_appetite = { 2, 3, 1 },
-
-    felblade = { 3, 1, 1 },
+    
+    chaos_cleave = { 3, 1, 1 },
     first_blood = { 3, 2, 1 },
     bloodlet = { 3, 3, 1 },
-
+    
     netherwalk = { 4, 1, 1 },
     desperate_insticts = { 4, 2, 1 },
     soul_rending = { 4, 3, 1 },
-
+    
     momentum = { 5, 1, 1 },
     fel_eruption = { 5, 2, 1 },
     nemesis = { 5, 3, 1 },
-
+    
     master_of_the_glaive = {6, 1, 1 },
     unleashed_power = { 6, 2, 1 },
     demon_reborn = { 6, 3, 1 },
-
+    
     chaos_blades = { 7, 1, 1 },
     fel_barrage = { 7, 2, 1 },
     demonic = {7, 3, 1 }
@@ -120,8 +120,7 @@ aura_env.abilities = {
     chaos_blades = 211048,
     netherwalk = 196555,
     fel_eruption = 211881,
-    felblade = 213241,
-    chaos_nova = 179057
+    felblade = 213241
 }
 
 aura_env.chargedAbilities = {
@@ -135,23 +134,8 @@ for k,v in pairs( aura_env.abilities ) do
 end
 
 aura_env.cooldowns = {
-  blade_dance = 188499,
-  death_sweep = 210152,
-  fury_of_the_illidari = 201467,
-  eye_beam = 198013,
-  throw_glaive = 185123,
-  fel_barrage = 211053,
-  fel_rush = 195072,
-  vengeful_retreat = 198793,
-  blur = 198589,
-  metamorphosis = 191427,
-  darkness = 196718,
-  nemesis = 206491,
-  chaos_blades = 211048,
-  netherwalk = 196555,
-  fel_eruption = 211881,
-  felblade = 213241,
-  chaos_nova = 179057
+    metamorphosis = 191427,
+    darkness = 196718
 }
 
 aura_env.charges = {}
@@ -175,8 +159,7 @@ aura_env.buffRemains = {}
 
 aura_env.debuffs = {
     frailty = 224509,
-    anguish = 202443,
-    bloodlet = 207690
+    anguish = 202443
 }
 
 aura_env.debuffNames = {}
@@ -193,7 +176,7 @@ function aura_env.rec( spell )
 end
 
 function aura_env.ready( spell )
-    local result = aura_env.cooldowns[ spell ] == 0
+    local result = aura_env.cooldowns[ spell ] < aura_env.timeToReady
     return result
 end
 
@@ -245,29 +228,6 @@ function aura_env.chargeCt( spell )
     return min( aura_env.chargesMax[ spell ], aura_env.charges[ spell ] + rounded / aura_env.chargeTime[ spell ] )
 end
 
-
 function aura_env.cdLeft( spell )
     return max( 0, aura_env.cooldowns[ spell ] - aura_env.timeOffset )
-end
-
-function aura_env.get_trait_rank(trait_id)
-    local rank = 0
-    local loaded = IsAddOnLoaded("LibArtifactData-1.0") or LoadAddOn("LibArtifactData-1.0")
-    if loaded then
-        aura_env.LAD = aura_env.LAD or LibStub("LibArtifactData-1.0")
-        if not aura_env.LAD:GetActiveArtifactID() then
-            aura_env.LAD:ForceUpdate()
-        end
-        local _, traits = aura_env.LAD:GetArtifactTraits()
-        if traits then
-            for _,v in ipairs(traits) do
-                if v.spellID == trait_id then
-                    rank = v.currentRank
-                    break
-                end
-            end
-        end
-    end
-
-    return rank
 end
